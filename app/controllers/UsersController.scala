@@ -1,13 +1,12 @@
 package controllers
 
 import play.api.mvc._
-import mongo.UserManager
+import mongo.{ChallengeManager, UserManager}
 import java.util.UUID
-import models.{NewUser, User}
+import models.DBUser
 import play.api.libs.json.Json
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import reactivemongo.core.commands.LastError
 import play.api.Logger
 
 
@@ -25,9 +24,9 @@ object UsersController extends Controller {
   def getUser(id: String) = Action.async {
     try{
       val uuid = UUID.fromString(id)
-      UserManager.getUser(uuid).map { userOpt:Option[User] =>
+      UserManager.getUser(uuid).map { userOpt =>
         userOpt match {
-          case Some(user: User) => Ok(Json.toJson(user))
+          case Some(user) => Ok(Json.toJson(user))
           case None => NotFound
         }
       }
@@ -38,14 +37,12 @@ object UsersController extends Controller {
 
   def createUser() = Action.async{ request =>
     request.body.asJson match {
-      case Some(json) => json.asOpt[NewUser] match {
+      case Some(json) => json.asOpt[DBUser](DBUser.newUserReads) match {
         case Some(newUser) =>
-          UserManager.createUser(newUser).map{ case (err, user) =>
+          UserManager.saveUser(newUser).map{ err =>
             if(err.ok) {
-              Logger.info("User created: " + user.id.toString)
-              Ok(Json.toJson(user))
+              Ok(Json.toJson(newUser))
             } else {
-              Logger.error("User create failed: " + err.errMsg)
               BadRequest
             }
           }
@@ -55,6 +52,19 @@ object UsersController extends Controller {
       case None =>
         Future(BadRequest)
     }
+  }
+
+
+  def getChallengesForUser(id: String) = Action.async {
+    try{
+      val uuid = UUID.fromString(id)
+      ChallengeManager.getChallengesForUser(uuid).map { challenges =>
+        Ok(Json.toJson(challenges))
+      }
+    } catch {
+      case e: Exception => Future(NotFound)
+    }
+
   }
 
 }

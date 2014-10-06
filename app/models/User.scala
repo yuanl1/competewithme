@@ -1,42 +1,52 @@
 package models
 
 import java.util.UUID
+import play.api.libs.json._ // JSON library
+import play.api.libs.json.Reads._ // Custom validation helpers
+import play.api.libs.functional.syntax._ // Combinator syntax
 
 /**
  * Created by kevinli on 9/23/14.
  */
 
-case class User(
-  id : UUID,
-  name : String,
-  password : String,
-  email : String
-)
-
-case class NewUser(
-  name : String,
-  password : String,
-  email : String)
-
-object NewUser {
-  import play.api.libs.json.Json
-  implicit val newUserFormat = Json.format[NewUser]
+trait User {
+  val id: UUID
+  val name: String
+  val email: String
+  val wins: Int
+  val attempts: Int
 }
 
-object User {
-  import play.api.libs.json.Json
-  implicit val userFormat = Json.format[User]
+case class DBUser (
+  id : UUID = UUID.randomUUID(),
+  name : String,
+  password : String,
+  email : String,
+  wins : Int = 0,
+  attempts : Int = 0) extends User
 
-  def createUser(newUser: NewUser): User = {
-    createUser(newUser.name, newUser.password, newUser.email)
-  }
+object DBUser {
+  implicit val dbUserFormat = Json.format[DBUser]
 
-  def createUser(name: String, password: String, email: String) = {
-    new User(
-      id = UUID.randomUUID,
-      name = name,
-      password = password,
-      email = email
-    )
+  //For creating DBUsers from a new user
+  val newUserReads: Reads[DBUser] = (
+    (JsPath \ "name").read[String] and
+    (JsPath \ "password").read[String] and
+    (JsPath \ "email").read[String]
+  )(createDbUser _)
+
+  private def createDbUser(name: String, password: String, email: String): DBUser = {
+    DBUser(name = name, password = password, email = email)
   }
+}
+
+case class UserJson(
+  id: UUID,
+  name: String,
+  email: String,
+  wins: Int,
+  attempts: Int) extends User
+
+object UserJson {
+  implicit val userJsonFormat = Json.format[UserJson]
 }

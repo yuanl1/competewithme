@@ -3,7 +3,7 @@ package mongo
 import play.api.Play.current
 import play.modules.reactivemongo._
 import play.modules.reactivemongo.json.collection.JSONCollection
-import models.{NewUser, User}
+import models.{UserJson, DBUser}
 import reactivemongo.api.indexes.{IndexType, Index}
 import scala.concurrent.ExecutionContext.Implicits.global
 import java.util.UUID
@@ -22,16 +22,16 @@ object UserManager {
     collection.indexesManager.ensure(new Index(Seq(("id", IndexType.Ascending)), Some("id"), true, true))
   }
 
-  def createUser(newUser: NewUser) = {
-    val user = User.createUser(newUser)
-    collection.save(user).map((_, user))
+  def saveUser(newUser: DBUser) = {
+    collection.save(newUser)
   }
 
-  def getUser(id: UUID): Future[Option[User]] = {
-    collection.find(Json.obj("id" -> id)).one[User]
+  def getUser(id: UUID): Future[Option[UserJson]] = {
+    collection.find(Json.obj("id" -> id)).one[UserJson]
   }
 
-  def getUsers(): Future[List[User]] = {
-    collection.find(Json.obj()).cursor[User].collect[List]()
+  def getUsers(): Future[List[UserJson]] = {
+    collection.find(Json.obj()).cursor[UserJson].collect[List]()
   }
+
 }
