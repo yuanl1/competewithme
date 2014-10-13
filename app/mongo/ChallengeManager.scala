@@ -22,7 +22,8 @@ object ChallengeManager {
 
   def init() {
     collection.indexesManager.ensure(new Index(Seq(("id", IndexType.Ascending)), Some("id"), true, true))
-    collection.indexesManager.ensure(new Index(Seq(("members.id", IndexType.Ascending)), Some("memberId"), false, true))
+    collection.indexesManager.ensure(new Index(Seq(("members", IndexType.Ascending)), Some("memberId"), false, true))
+    collection.indexesManager.ensure(new Index(Seq(("pendingMembers", IndexType.Ascending)), Some("pendingMemberId"), false, true))
   }
 
   def getChallenge(id: UUID): Future[Option[Challenge]] = {
@@ -34,11 +35,20 @@ object ChallengeManager {
   }
 
   def getChallengesForUser(id: UUID): Future[List[Challenge]] = {
-    collection.find(Json.obj("members.id" -> id)).cursor[Challenge].collect[List]()
+    collection.find(Json.obj("members" -> id)).cursor[Challenge].collect[List]()
   }
 
-  def saveChallenge(challenge: Challenge) = {
-    collection.save(challenge)
+  def getPendingChallengesForUser(id: UUID): Future[List[Challenge]] = {
+    collection.find(Json.obj("pendingMembers" -> id)).cursor[Challenge].collect[List]()
   }
+
+  def createChallenge(challenge: Challenge) = {
+    collection.insert(challenge)
+  }
+
+  def updateChallenge(challenge: Challenge) = {
+    collection.update(Json.obj("id"-> challenge.id), challenge)
+  }
+
 
 }

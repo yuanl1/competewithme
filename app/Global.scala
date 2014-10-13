@@ -3,7 +3,7 @@
  */
 
 import play.api._
-import mongo.{ChallengeManager, UserManager}
+import mongo.{CheckinManager, ChallengeManager, UserManager}
 
 
 object Global extends GlobalSettings {
@@ -13,6 +13,7 @@ object Global extends GlobalSettings {
     Logger.info("Initializing User Manager")
     UserManager.init()
     ChallengeManager.init()
+    CheckinManager.init()
   }
 
   override def onStop(app: Application) {

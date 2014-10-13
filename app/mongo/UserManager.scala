@@ -3,7 +3,7 @@ package mongo
 import play.api.Play.current
 import play.modules.reactivemongo._
 import play.modules.reactivemongo.json.collection.JSONCollection
-import models.{UserJson, DBUser}
+import models.{Challenge, User}
 import reactivemongo.api.indexes.{IndexType, Index}
 import scala.concurrent.ExecutionContext.Implicits.global
 import java.util.UUID
@@ -20,18 +20,27 @@ object UserManager {
 
   def init() {
     collection.indexesManager.ensure(new Index(Seq(("id", IndexType.Ascending)), Some("id"), true, true))
+    collection.indexesManager.ensure(new Index(Seq(("email", IndexType.Ascending)), Some("email"), true, true))
   }
 
-  def saveUser(newUser: DBUser) = {
-    collection.save(newUser)
+  def createUser(newUser: User) = {
+    collection.insert(newUser)
   }
 
-  def getUser(id: UUID): Future[Option[UserJson]] = {
-    collection.find(Json.obj("id" -> id)).one[UserJson]
+  def getUser(id: UUID): Future[Option[User]] = {
+    collection.find(Json.obj("id" -> id)).one[User]
   }
 
-  def getUsers(): Future[List[UserJson]] = {
-    collection.find(Json.obj()).cursor[UserJson].collect[List]()
+  def getUsers(): Future[List[User]] = {
+    collection.find(Json.obj()).cursor[User].collect[List]()
+  }
+
+  def getUsersInChallenge(challenge: Challenge): Future[List[User]] = {
+    collection.find(Json.obj("id" -> Json.obj("$in" -> challenge.members))).cursor[User].collect[List]()
+  }
+
+  def getPendingUsersInChallenge(challenge: Challenge): Future[List[User]] = {
+    collection.find(Json.obj("id" -> Json.obj("$in" -> challenge.pendingMembers))).cursor[User].collect[List]()
   }
 
 }

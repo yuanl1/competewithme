@@ -3,19 +3,29 @@
 # ~~~~
 
 # Home page
-GET     /                                               controllers.Application.index
+GET     /                                                   controllers.Application.index
 
 # User API
-GET     /users/:id                                      controllers.UsersController.getUser(id: String)
-GET     /users/:id/challenges                           controllers.UsersController.getChallengesForUser(id: String)
-GET     /users                                          controllers.UsersController.getUsers()
-PUT     /users                                          controllers.UsersController.createUser()
+GET     /users                                              controllers.UsersController.getUsers()
+GET     /users/:id                                          controllers.UsersController.getUser(id: java.util.UUID)
+GET     /users/:id/challenges                               controllers.UsersController.getChallengesForUser(id: java.util.UUID)
+GET     /users/:id/invites                                  controllers.UsersController.getInvitesForUser(id: java.util.UUID)
+GET     /users/:userId/checkins                             controllers.UsersController.getCheckinsForUser(userId: java.util.UUID)
+GET     /users/:userId/join                                 controllers.UsersController.joinChallenge(userId: java.util.UUID, challengeId: java.util.UUID)
+POST    /users                                              controllers.UsersController.createUser()
 
 
 # Challenge API
-GET     /challenges/:id             controllers.ChallengesController.getChallenge(id: String)
-GET     /challenges                 controllers.ChallengesController.getChallenges()
-PUT     /challenges                 controllers.ChallengesController.createChallenge()
+GET     /challenges                                         controllers.ChallengesController.getChallenges()
+GET     /challenges/:id                                     controllers.ChallengesController.getChallenge(id: java.util.UUID)
+GET     /challenges/:id/all                                 controllers.ChallengesController.getChallengeAll(id: java.util.UUID)
+GET     /challenges/:id/checkins                            controllers.ChallengesController.getChallengeCheckins(id: java.util.UUID)
+GET     /challenges/:id/members                             controllers.ChallengesController.getChallengeMembers(id: java.util.UUID)
+GET     /challenges/:id/invite                              controllers.ChallengesController.inviteUserToChallenge(id: java.util.UUID, userId: java.util.UUID)
+POST    /challenges                                         controllers.ChallengesController.createChallenge()
+
+# Checkin API
+POST    /checkins                                           controllers.CheckinsController.createCheckin()
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

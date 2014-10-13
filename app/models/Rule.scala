@@ -1,7 +1,10 @@
 package models
 
 import java.util.Date
-import play.api.libs.json._ // JSON library
+import play.api.libs.json._
+import org.joda.time.{Weeks, Days, Hours, DateTime}
+
+// JSON library
 import play.api.libs.json.Reads._ // Custom validation helpers
 import play.api.libs.functional.syntax._ // Combinator syntax
 
@@ -30,11 +33,14 @@ object CheckinFrequency {
 }
 
 
-sealed trait SprintLength{ def unit: String }
+sealed trait SprintLength{
+  def unit: String
+  def days: Int
+}
 object SprintLength {
-  case object Day extends SprintLength{ val unit = "Day" }
-  case object Week extends SprintLength{ val unit = "Week" }
-  case object Month extends SprintLength{ val unit = "Month" }
+  case object Day extends SprintLength{ val unit = "Day"; val days = 1}
+  case object Week extends SprintLength{ val unit = "Week"; val days = 7 }
+  case object TwoWeeks extends SprintLength{ val unit = "TwoWeeks"; val days = 14 }
 
   implicit val sprintLengthWrites: Writes[SprintLength] = new Writes[SprintLength] {
     def writes(length: SprintLength) = JsString(length.unit)
@@ -43,7 +49,7 @@ object SprintLength {
   implicit val sprintLengthReads: Reads[SprintLength] = JsPath.read[String].map{
     case "Day" => Day
     case "Week" => Week
-    case "Month" => Month
+    case "TwoWeeks" => TwoWeeks
     case _ => Day
   }
 }
@@ -54,8 +60,25 @@ case class Rule(
   numberOfSprints: Int,
   checkinFrequency: CheckinFrequency) {
 
-  def getEndDate(startDate: Date) = {
-    new Date //TODO
+  def canCheckin(checkins: List[Checkin]): Boolean = {
+    checkins.headOption match {
+      case Some(latestCheckin) =>
+        checkinFrequency match {
+          case CheckinFrequency.None => true
+          case CheckinFrequency.OnceHourly =>
+            Hours.hoursBetween(new DateTime(latestCheckin.date), DateTime.now).getHours >= 1
+          case CheckinFrequency.OnceDaily =>
+            Days.daysBetween(new DateTime(latestCheckin.date), DateTime.now).getDays >= 1
+          case CheckinFrequency.OnceWeekly =>
+            Weeks.weeksBetween(new DateTime(latestCheckin.date), DateTime.now).getWeeks >= 1
+          case _ => false
+        }
+      case None => true
+    }
+  }
+
+  def getEndDate(startDate: Date): Date = {
+    new DateTime(startDate).plusDays(sprintLength.days * numberOfSprints).toDate
   }
 }
 
