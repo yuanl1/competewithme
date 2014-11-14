@@ -15,6 +15,8 @@ import reactivemongo.core.commands.LastError
  * API for Challenges
  */
 object ChallengesController extends Controller {
+  implicit val userWrites = User.userWrites
+
 
   def getChallenges() = Action.async {
     ChallengeManager.getChallenges.map{ challenges =>
@@ -53,10 +55,7 @@ object ChallengesController extends Controller {
     ChallengeManager.getChallenge(id).flatMap{
       case Some(challenge) =>
         UserManager.getUsersInChallenge(challenge).map { users =>
-          val result = users.foldLeft(JsArray()){ (arr, user) =>
-            arr.append(Json.toJson(user).transform(User.withoutPassword).get)
-          }
-          Ok(result)
+          Ok(Json.toJson(users))
         }
       case None => Future(NotFound)
     }

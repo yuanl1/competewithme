@@ -3,32 +3,58 @@ package controllers
 import play.api.mvc._
 import mongo.{CheckinManager, ChallengeManager, UserManager}
 import java.util.UUID
-import models.{Checkin, User}
-import play.api.libs.json.{JsArray, Json}
+import models.{SessionToken, Checkin, User}
+import play.api.libs.json.{JsSuccess, JsArray, Json}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import play.api.Logger
+import util.ControllerHelpers
 
 
 /**
  * API for Users
  */
-object UsersController extends Controller {
+object UsersController extends ControllerHelpers{
 
-  def getUsers() = Action.async {
-    UserManager.getUsers.map{ users =>
-      val result = users.foldLeft(JsArray()){ (arr, user) =>
-        arr.append(Json.toJson(user).transform(User.withoutPassword).get)
-      }
-      Ok(result)
+  implicit val userWrites = User.userWrites
+
+  def createUser() = Action.async(parse.json){ request =>
+    request.body.asOpt[User](User.newUserReads) match {
+      case Some(newUser) =>
+        UserManager.createUser(newUser).map{ err =>
+          if(err.ok) {
+            Created(Json.toJson(newUser))
+          } else {
+            BadRequest
+          }
+        }
+      case None =>
+        Future(BadRequest)
     }
   }
 
-  def getUser(id: UUID) = Action.async {
-    UserManager.getUser(id).map {
-      case Some(user) => Ok(Json.toJson(user).transform(User.withoutPassword).get)
-      case None => NotFound
+  def login() = Action.async(parse.json) { request =>
+    ((request.body \ "email").validate[String], (request.body \ "password").validate[String]) match {
+      case (JsSuccess(email, _), JsSuccess(password, _)) =>
+        UserManager.getUserByEmail(email).flatMap{
+          case Some(user) =>
+            val session = SessionToken.create()
+            UserManager.updateUser(user.updateSession(session)).map{ err =>
+              if(err.ok){
+                Ok(Json.toJson(session))
+              } else {
+                InternalServerError("Failed to update user")
+              }
+            }
+
+          case None => Future.successful(BadRequest("User not found"))
+        }
+      case _ => Future.successful(BadRequest("Must provide an email and a password."))
     }
+  }
+
+  def getUser() = Authenticated { user =>
+    Future.successful(Ok(Json.toJson(user)))
   }
 
   def getChallengesForUser(id: UUID) = Action.async {
@@ -68,18 +94,4 @@ object UsersController extends Controller {
     }
   }
 
-  def createUser() = Action.async(parse.json){ request =>
-    request.body.asOpt[User](User.newUserReads) match {
-      case Some(newUser) =>
-        UserManager.createUser(newUser).map{ err =>
-          if(err.ok) {
-            Created(Json.toJson(newUser))
-          } else {
-            BadRequest
-          }
-        }
-      case None =>
-        Future(BadRequest)
-    }
-  }
 }

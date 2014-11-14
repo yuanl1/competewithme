@@ -6,13 +6,13 @@
 GET     /                                                   controllers.Application.index
 
 # User API
-GET     /users                                              controllers.UsersController.getUsers()
-GET     /users/:id                                          controllers.UsersController.getUser(id: java.util.UUID)
+POST    /users/register                                     controllers.UsersController.createUser()
+POST    /users/login                                        controllers.UsersController.login()
+GET     /users/info                                         controllers.UsersController.getUser()
 GET     /users/:id/challenges                               controllers.UsersController.getChallengesForUser(id: java.util.UUID)
 GET     /users/:id/invites                                  controllers.UsersController.getInvitesForUser(id: java.util.UUID)
 GET     /users/:userId/checkins                             controllers.UsersController.getCheckinsForUser(userId: java.util.UUID)
 GET     /users/:userId/join                                 controllers.UsersController.joinChallenge(userId: java.util.UUID, challengeId: java.util.UUID)
-POST    /users                                              controllers.UsersController.createUser()
 
 
 # Challenge API

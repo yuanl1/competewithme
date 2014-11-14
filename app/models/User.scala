@@ -1,5 +1,6 @@
 package models
 
+import _root_.util.PasswordHelper
 import java.util.UUID
 import play.api.libs.json._ // JSON library
 import play.api.libs.json.Reads._ // Custom validation helpers
@@ -14,21 +15,32 @@ case class User(
   name: String,
   email: String,
   password: String,
-  wins: Int = 0,
-  attempts: Int = 0)
+  salt: String,
+  session: Option[SessionToken]) {
+
+  def updateSession(session: SessionToken): User = {
+    this.copy(session = Some(session))
+  }
+}
 
 object User {
-  implicit val userDbFormat = Json.format[User]
+  val userDbFormat = Json.format[User]
 
   val newUserReads: Reads[User] = (
-    (JsPath \ "name").read[String] and
-    (JsPath \ "password").read[String] and
-    (JsPath \ "email").read[String]
+    (__ \ "name").read[String] and
+    (__ \ "password").read[String] and
+    (__ \ "email").read[String]
   )(createDbUser _)
 
-  private def createDbUser(name: String, password: String, email: String): User = {
-    User(name = name, password = password, email = email)
+  val userWrites = new Writes[User] {
+    override def writes(obj: User): JsValue = Json.obj(
+      "name" -> obj.name,
+      "email" -> obj.email
+    )
   }
 
-  val withoutPassword = (JsPath \ "password").json.prune
+  private def createDbUser(name: String, password: String, email: String): User = {
+    val (hash, salt) = PasswordHelper.encryptPassword(password)
+    User(name = name, password = hash, salt = salt, email = email, session = None)
+  }
 }

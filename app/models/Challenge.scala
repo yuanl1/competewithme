@@ -74,13 +74,19 @@ object Challenge {
     JsPath.read[JsObject].map{ o => o ++ Json.obj("checkins" -> Json.toJson(checkins))}
   )
 
-  def withUsers(users: List[User]) = JsPath.json.update(
-    JsPath.read[JsObject].map{ o => o ++ Json.obj("members" -> Json.toJson(users))}
-  )
+  def withUsers(users: List[User]) = {
+    implicit val userWrite = User.userWrites
+    JsPath.json.update(
+      JsPath.read[JsObject].map{ o => o ++ Json.obj("members" -> Json.toJson(users))}
+    )
+  }
 
-  def withPendingUsers(users: List[User]) = JsPath.json.update(
-    JsPath.read[JsObject].map{ o => o ++ Json.obj("pendingMembers" -> Json.toJson(users))}
-  )
+  def withPendingUsers(users: List[User]) = {
+    implicit val userWrite = User.userWrites
+    JsPath.json.update(
+      JsPath.read[JsObject].map{ o => o ++ Json.obj("pendingMembers" -> Json.toJson(users))}
+    )
+  }
 
   def withAll(checkins: List[Checkin], users: List[User], pendingUsers: List[User]) = (
       withCheckins(checkins) and
