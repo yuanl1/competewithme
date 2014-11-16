@@ -11,7 +11,13 @@ import play.api.libs.functional.syntax._ // Combinator syntax
 
 case class ChallengeMember(
   id: UUID,
-  checkins: List[Checkin] = List.empty[Checkin])
+  name: String,
+  joined: Boolean,
+  role: Role)
+
+object ChallengeMember {
+  implicit val challengeMemberFormatter = Json.format[ChallengeMember]
+}
 
 
 case class Challenge(
@@ -20,50 +26,52 @@ case class Challenge(
   startDate : Date,
   endDate : Date,
   reward: String,
-  pendingMembers: List[UUID],
-  members: List[UUID],
+  members: Set[ChallengeMember],
   visibility: Visibility,
   rule: Rule) {
 
-  def hasMember(id: UUID): Boolean = {
-    members.exists(_ == id)
+  def hasOwner(user: User): Boolean = {
+    members.exists(member => member.id == user.id && member.role == Role.Owner)
+  }
+  def hasMember(user: User): Boolean = {
+    members.exists(_.id == user.id)
   }
 
-  def inviteMember(id: UUID): Option[Challenge] = {
-    if(pendingMembers.exists(_ == id) || members.exists(_ == id)){
+  def inviteMember(user: User): Option[Challenge] = {
+    if(hasMember(user)) {
       None
     } else {
-      Some(this.copy(pendingMembers = id :: pendingMembers))
+      Some(this.copy(members = members + ChallengeMember(user.id, user.name, false, Role.Member)))
     }
   }
 
-  def joinChallenge(id: UUID): Option[Challenge] = {
-    pendingMembers.find(_ == id).map{ x =>
-      this.copy(
-        pendingMembers = pendingMembers.filter(_ != id),
-        members = x :: members
-      )
+  def joinChallenge(user: User): Option[Challenge] = {
+    members.find(_.id == user.id).flatMap{ challengeMember =>
+      if(!challengeMember.joined){
+        Some(this.copy(members = members - challengeMember + ChallengeMember(user.id, user.name, true, Role.Member)))
+      } else {
+        None
+      }
     }
   }
 }
 
 object Challenge {
-  val newChallengeReads: Reads[Challenge] = (
+  def newChallengeReads(user: User): Reads[Challenge] = (
       (JsPath \ "name").read[String] and
       (JsPath \ "startDate").read[Date] and
       (JsPath \ "reward").read[String] and
       (JsPath \ "visibility").read[Visibility] and
       (JsPath \ "rule").read[Rule]
-  )(createNewChallenge _)
+  )(createNewChallenge(user) _)
 
-  private def createNewChallenge(name: String, startDate: Date, reward: String, visibility: Visibility, rule: Rule) : Challenge = {
+  private def createNewChallenge(user: User)(name: String, startDate: Date, reward: String, visibility: Visibility, rule: Rule) : Challenge = {
     Challenge(UUID.randomUUID(),
       name,
       startDate,
       rule.getEndDate(startDate),
       reward,
-      List.empty[UUID],
-      List.empty[UUID],
+      Set(ChallengeMember(user.id, user.name, true, Role.Owner)),
       visibility,
       rule)
   }

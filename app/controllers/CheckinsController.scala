@@ -7,39 +7,39 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import models.Checkin
 import mongo.{ChallengeManager, UserManager, CheckinManager}
+import util.ControllerHelpers
 
 /**
  * Created by kevinli on 10/13/14.
  */
-object CheckinsController extends Controller {
+object CheckinsController extends ControllerHelpers {
 
-  def createCheckin() = Action.async(parse.json) { request =>
-    request.body.asOpt[Checkin](Checkin.newCheckinReads) match {
+  def createCheckin() = AuthenticatedJson { case (request, user) =>
+    request.body.asOpt[Checkin](Checkin.newCheckinReads(user)) match {
       case Some(checkin) =>
         val toFlatten = for{
-          userOpt <- UserManager.getUser(checkin.user)
           challengeOpt <- ChallengeManager.getChallenge(checkin.challenge)
           checkins <- CheckinManager.get(checkin.user, checkin.challenge)
         } yield {
-          if(userOpt.isDefined && challengeOpt.isDefined) {
+          if(challengeOpt.isDefined) {
             val challenge = challengeOpt.get
-            if(challenge.hasMember(checkin.user) && challenge.rule.canCheckin(checkins)){
+            if(challenge.hasMember(user) && challenge.rule.canCheckin(checkins)){
               CheckinManager.create(checkin).map { error =>
                 if (error.ok) {
                   Created(Json.toJson(checkin))
                 } else {
-                  BadRequest(Json.obj("error" -> error.message))
+                  InternalServerError(Json.obj("error" -> error.message))
                 }
               }
             } else {
               Future(BadRequest(Json.obj("error" -> "Checkin requirements not met")))
             }
           } else {
-            Future(BadRequest)
+            Future(BadRequest(Json.obj("error" -> "Checkin requirements not met")))
           }
         }
         toFlatten.flatMap(x => x)
-      case None => Future(BadRequest)
+      case None => Future(BadRequest(Json.obj("error" -> "Must provide challenge id and message")))
     }
 
   }

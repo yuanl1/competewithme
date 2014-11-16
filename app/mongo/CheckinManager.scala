@@ -3,7 +3,7 @@ package mongo
 import play.api.Play.current
 import play.modules.reactivemongo._
 import play.modules.reactivemongo.json.collection.JSONCollection
-import models.Checkin
+import models.{User, Checkin}
 import reactivemongo.api.indexes.{IndexType, Index}
 import scala.concurrent.ExecutionContext.Implicits.global
 import java.util.UUID
@@ -26,8 +26,8 @@ object CheckinManager {
     collection.insert(checkin)
   }
 
-  def getByUser(user: UUID): Future[List[Checkin]] = {
-    val query = Json.obj("user" -> user)
+  def getByUser(user: User): Future[List[Checkin]] = {
+    val query = Json.obj("user" -> user.id)
     collection.find(query).sort(Json.obj("date" -> -1)).cursor[Checkin].collect[List]()
   }
 

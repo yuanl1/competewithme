@@ -53,44 +53,25 @@ object UsersController extends ControllerHelpers{
     }
   }
 
-  def getUser() = Authenticated { user =>
+  def getUser = Authenticated { case (request , user) =>
     Future.successful(Ok(Json.toJson(user)))
   }
 
-  def getChallengesForUser(id: UUID) = Action.async {
-    ChallengeManager.getChallengesForUser(id).map{ challenges =>
+  def getChallengesForUser = Authenticated { case (request, user) =>
+    ChallengeManager.getChallengesForUser(user).map{ challenges =>
       Ok(Json.toJson(challenges))
     }
   }
 
-  def getInvitesForUser(id: UUID) = Action.async {
-    ChallengeManager.getPendingChallengesForUser(id).map { challenges =>
+  def getInvitesForUser = Authenticated { case (request, user) =>
+    ChallengeManager.getChallengeInvitesForUser(user).map{ challenges =>
       Ok(Json.toJson(challenges))
     }
   }
 
-  def getCheckinsForUser(userId: UUID) = Action.async {
-    CheckinManager.getByUser(userId).map { checkins =>
+  def getCheckinsForUser = Authenticated { case (request, user) =>
+    CheckinManager.getByUser(user).map { checkins =>
       Ok(Json.toJson(checkins))
-    }
-  }
-
-  def joinChallenge(userId: UUID, challengeId: UUID) = Action.async {
-    ChallengeManager.getChallenge(challengeId).flatMap {
-      case Some(challenge) =>
-        val newChallengeOpt = challenge.joinChallenge(userId)
-        if(newChallengeOpt.isDefined) {
-          ChallengeManager.updateChallenge(newChallengeOpt.get).map { error =>
-            if(error.ok) {
-              Ok(Json.toJson(newChallengeOpt.get))
-            } else {
-              BadRequest(Json.obj("error" -> error.message))
-            }
-          }
-        } else {
-          Future(Ok(Json.toJson(challenge)))
-        }
-      case None => Future(NotFound)
     }
   }
 

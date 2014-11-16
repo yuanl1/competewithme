@@ -9,10 +9,9 @@ GET     /                                                   controllers.Applicat
 POST    /users/register                                     controllers.UsersController.createUser()
 POST    /users/login                                        controllers.UsersController.login()
 GET     /users/info                                         controllers.UsersController.getUser()
-GET     /users/:id/challenges                               controllers.UsersController.getChallengesForUser(id: java.util.UUID)
-GET     /users/:id/invites                                  controllers.UsersController.getInvitesForUser(id: java.util.UUID)
-GET     /users/:userId/checkins                             controllers.UsersController.getCheckinsForUser(userId: java.util.UUID)
-GET     /users/:userId/join                                 controllers.UsersController.joinChallenge(userId: java.util.UUID, challengeId: java.util.UUID)
+GET     /users/challenges                                   controllers.UsersController.getChallengesForUser()
+GET     /users/invites                                      controllers.UsersController.getInvitesForUser()
+GET     /users/checkins                                     controllers.UsersController.getCheckinsForUser()
 
 
 # Challenge API
@@ -21,7 +20,9 @@ GET     /challenges/:id                                     controllers.Challeng
 GET     /challenges/:id/all                                 controllers.ChallengesController.getChallengeAll(id: java.util.UUID)
 GET     /challenges/:id/checkins                            controllers.ChallengesController.getChallengeCheckins(id: java.util.UUID)
 GET     /challenges/:id/members                             controllers.ChallengesController.getChallengeMembers(id: java.util.UUID)
-GET     /challenges/:id/invite                              controllers.ChallengesController.inviteUserToChallenge(id: java.util.UUID, userId: java.util.UUID)
+GET     /challenges/:id/invite/:userId                      controllers.ChallengesController.inviteUserToChallenge(id: java.util.UUID, userId: java.util.UUID)
+GET     /challenges/:id/join                                controllers.ChallengesController.joinChallenge(id: java.util.UUID)
+
 POST    /challenges                                         controllers.ChallengesController.createChallenge()
 
 # Checkin API

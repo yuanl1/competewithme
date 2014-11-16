@@ -7,6 +7,7 @@ import play.mvc.Http
 import mongo.UserManager
 import java.util.{Date, UUID}
 import scala.concurrent.ExecutionContext.Implicits.global
+import play.api.libs.json.JsValue
 
 /**
  * Created by kevinli on 10/13/14.
@@ -21,14 +22,29 @@ trait ControllerHelpers extends Controller {
     }
   }
 
-  def Authenticated(f: User => Future[Result]) = Action.async { request =>
+  def AuthenticatedJson(f: (Request[JsValue], User) => Future[Result]) = Action.async(parse.json) { request =>
     getSessionToken(request.headers) match {
       case Some(session) =>
         UserManager.findUserBySession(session).flatMap {
           case Some(user) => if(user.session.get.expDate.before(new Date)) {
             Future.successful(Unauthorized)
           } else {
-            f(user)
+            f(request, user)
+          }
+          case None => Future.successful(Unauthorized)
+        }
+      case None => Future.successful(Unauthorized)
+    }
+  }
+
+  def Authenticated(f: (Request[AnyContent], User) => Future[Result]) = Action.async { request =>
+    getSessionToken(request.headers) match {
+      case Some(session) =>
+        UserManager.findUserBySession(session).flatMap {
+          case Some(user) => if(user.session.get.expDate.before(new Date)) {
+            Future.successful(Unauthorized)
+          } else {
+            f(request, user)
           }
           case None => Future.successful(Unauthorized)
         }

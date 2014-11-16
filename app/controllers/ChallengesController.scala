@@ -1,20 +1,22 @@
 package controllers
 
 import play.api.mvc._
-import java.util.UUID
+import java.util.{Date, UUID}
 import play.api.libs.json.{JsArray, Json}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import play.api.Logger
 import mongo.{UserManager, CheckinManager, ChallengeManager}
-import models.{User, Challenge}
+import models._
 import reactivemongo.core.commands.LastError
+import scala.Some
+import util.ControllerHelpers
 
 
 /**
  * API for Challenges
  */
-object ChallengesController extends Controller {
+object ChallengesController extends ControllerHelpers {
   implicit val userWrites = User.userWrites
 
 
@@ -35,11 +37,10 @@ object ChallengesController extends Controller {
       challengeOpt <- ChallengeManager.getChallenge(id)
       checkins <- CheckinManager.getByChallenge(id)
       users <- if (challengeOpt.isDefined) UserManager.getUsersInChallenge(challengeOpt.get) else Future(List.empty[User])
-      pendingUsers <- if (challengeOpt.isDefined) UserManager.getPendingUsersInChallenge(challengeOpt.get) else Future(List.empty[User])
     } yield {
       challengeOpt match {
         case Some(challenge) =>
-          Ok(Json.toJson(challenge).transform(Challenge.withAll(checkins, users, pendingUsers)).get)
+          Ok(Json.toJson(challenge))
         case None => NotFound
       }
     }
@@ -61,23 +62,23 @@ object ChallengesController extends Controller {
     }
   }
 
-  def inviteUserToChallenge(challengeId: UUID, userId: UUID) = Action.async {
+  def inviteUserToChallenge(challengeId: UUID, userId: UUID) = Authenticated { case (request, user) =>
     val toFlatten = for {
-      userOpt <- UserManager.getUser(userId)
       challengeOpt <- ChallengeManager.getChallenge(challengeId)
+      userOpt <- UserManager.getUser(userId)
     } yield {
       (userOpt, challengeOpt) match {
-        case (Some(user), Some(challenge)) =>
-          challenge.inviteMember(user.id) match {
+        case (Some(userToInvite), Some(challenge)) if challenge.hasOwner(user) =>
+          challenge.inviteMember(userToInvite) match {
             case Some(newChallenge) =>
               ChallengeManager.updateChallenge(newChallenge).map{ error =>
                 if(error.ok) {
                   Ok(Json.toJson(newChallenge))
                 } else {
-                  BadRequest(Json.obj("error" -> error.message))
+                  InternalServerError(Json.obj("error" -> error.message))
                 }
               }
-            case None => Future(Ok(Json.toJson(challenge)))
+            case None => Future(BadRequest(Json.obj("error" -> "User cannot be invited")))
           }
         case _ => Future(BadRequest)
       }
@@ -85,11 +86,30 @@ object ChallengesController extends Controller {
     toFlatten.flatMap(x => x)
   }
 
-  def createChallenge() = Action.async(parse.json) { request =>
-    request.body.asOpt[Challenge](Challenge.newChallengeReads) match {
+  def joinChallenge(id: UUID) = Authenticated { case (request, user) =>
+    ChallengeManager.getChallenge(id).flatMap {
+      case Some(challenge) =>
+        val newChallengeOpt = challenge.joinChallenge(user)
+        if(newChallengeOpt.isDefined) {
+          ChallengeManager.updateChallenge(newChallengeOpt.get).map { error =>
+            if(error.ok) {
+              Ok(Json.toJson(newChallengeOpt.get))
+            } else {
+              BadRequest(Json.obj("error" -> error.message))
+            }
+          }
+        } else {
+          Future(BadRequest(Json.obj("error" -> "Unable to join challenge")))
+        }
+      case None => Future(NotFound)
+    }
+  }
+
+  def createChallenge() = AuthenticatedJson { case (request, user) =>
+    request.body.asOpt[Challenge](Challenge.newChallengeReads(user)) match {
       case Some(challenge) =>
         ChallengeManager.createChallenge(challenge).map{ err =>
-          if(err.ok)
+          if (err.ok)
             Ok(Json.toJson(challenge))
           else
             BadRequest

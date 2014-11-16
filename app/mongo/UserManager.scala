@@ -50,11 +50,9 @@ object UserManager {
   }
 
   def getUsersInChallenge(challenge: Challenge): Future[List[User]] = {
-    collection.find(Json.obj("id" -> Json.obj("$in" -> challenge.members))).cursor[User].collect[List]()
+    val memberIds = challenge.members.map(_.id)
+    collection.find(Json.obj("id" -> Json.obj("$in" -> memberIds))).cursor[User].collect[List]()
   }
 
-  def getPendingUsersInChallenge(challenge: Challenge): Future[List[User]] = {
-    collection.find(Json.obj("id" -> Json.obj("$in" -> challenge.pendingMembers))).cursor[User].collect[List]()
-  }
 
 }

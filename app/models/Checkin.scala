@@ -17,14 +17,13 @@ case class Checkin(
 
 object Checkin {
   implicit val checkinFormat = Json.format[Checkin]
-  val newCheckinReads: Reads[Checkin] = (
-      (JsPath \ "user").read[UUID] and
+  def newCheckinReads(user: User): Reads[Checkin] = (
       (JsPath \ "challenge").read[UUID] and
       (JsPath \ "message").read[String]
-    )(createNewCheckin _)
+    )(createNewCheckin(user.id) _)
 
 
-  def createNewCheckin(userId: UUID, challengeId: UUID, message: String): Checkin = {
+  def createNewCheckin(userId: UUID)(challengeId: UUID, message: String): Checkin = {
     Checkin(user=userId, challenge=challengeId, message=message, date= new Date)
   }
 }

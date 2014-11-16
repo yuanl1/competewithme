@@ -16,7 +16,7 @@ object Visibility {
     def writes(visibility: Visibility) = JsString(visibility.visibility)
   }
 
-  implicit val checkinReads: Reads[Visibility] = JsPath.read[String].map{
+  implicit val visibilityReads: Reads[Visibility] = JsPath.read[String].map{
     case "Global" => Global
     case "Friends" => Friends
     case "Private" => Private
