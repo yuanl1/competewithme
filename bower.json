@@ -1,0 +1,27 @@
+{
+  "name": "competewithme",
+  "version": "0.0.0",
+  "homepage": "https://github.com/yuanl1/competewithme",
+  "authors": [
+    "yuan.kevin.li@gmail.com"
+  ],
+  "description": "compete with me",
+  "moduleType": [
+    "amd"
+  ],
+  "keywords": [
+    "compete",
+    "with",
+    "me"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "public/bower_components",
+    "test",
+    "tests"
+  ]
+}
