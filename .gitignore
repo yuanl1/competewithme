@@ -18,3 +18,4 @@ dist
 /.project
 /RUNNING_PID
 /.settings
+/public/bower_components
