@@ -19,3 +19,5 @@ dist
 /RUNNING_PID
 /.settings
 /public/bower_components
+/public/.DS_Store
+.DS_Store
