@@ -8,7 +8,7 @@ import play.api.libs.json.{JsSuccess, JsArray, Json}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import play.api.Logger
-import util.ControllerHelpers
+import util.{PasswordHelper, ControllerHelpers}
 
 
 /**
@@ -36,8 +36,8 @@ object UsersController extends ControllerHelpers{
   def login() = Action.async(parse.json) { request =>
     ((request.body \ "email").validate[String], (request.body \ "password").validate[String]) match {
       case (JsSuccess(email, _), JsSuccess(password, _)) =>
-        UserManager.getUserByEmail(email).flatMap{
-          case Some(user) =>
+        UserManager.getUserByEmail(email).flatMap {
+          case Some(user) if PasswordHelper.matchPassword(password, user.password) =>
             val session = SessionToken.create()
             UserManager.updateUser(user.updateSession(session)).map{ err =>
               if(err.ok){
@@ -47,7 +47,7 @@ object UsersController extends ControllerHelpers{
               }
             }
 
-          case None => Future.successful(BadRequest("User not found"))
+          case _ => Future.successful(BadRequest("Unable to login"))
         }
       case _ => Future.successful(BadRequest("Must provide an email and a password."))
     }
