@@ -7,9 +7,10 @@
   <md-content>
     <md-card>
       <form layout="vertical" layout-align="center">
-        <md-text-float label="Email" ng-model="email" class="form-input" type="email"> </md-text-float>
-        <md-text-float label="Password" ng-model="password" class="form-input" type="password"> </md-text-float>
+        <md-text-float md-theme="light-green" label="Email" ng-model="email" class="form-input" type="email"> </md-text-float>
+        <md-text-float md-theme="light-green" label="Password" ng-model="password" class="form-input" type="password"> </md-text-float>
         <md-button class="md-raised md-primary" ng-click="doLogin()">Login</md-button>
+        <md-button class=" md-primary" ng-click="doLogin()">Sign Up</md-button>
       </form>
     </md-card>
   </md-content>
