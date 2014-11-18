@@ -21,12 +21,17 @@ object UsersController extends ControllerHelpers{
   def createUser() = Action.async(parse.json){ request =>
     request.body.asOpt[User](User.newUserReads) match {
       case Some(newUser) =>
-        UserManager.createUser(newUser).map{ err =>
-          if(err.ok) {
-            Created(Json.toJson(newUser))
-          } else {
-            BadRequest
-          }
+        UserManager.getUserByEmail(newUser.email).flatMap {
+          case Some(user) =>
+            Future(Conflict)
+          case None =>
+            UserManager.createUser(newUser).map{ err =>
+              if(err.ok) {
+                Ok(Json.toJson(newUser.session.get))
+              } else {
+                BadRequest
+              }
+            }
         }
       case None =>
         Future(BadRequest)

@@ -27,9 +27,9 @@ object User {
   val userDbFormat = Json.format[User]
 
   val newUserReads: Reads[User] = (
-    (__ \ "name").read[String] and
-    (__ \ "password").read[String] and
-    (__ \ "email").read[String]
+    (__ \ "name").read[String](minLength[String](2)) and
+    (__ \ "password").read[String](minLength[String](5)) and
+    (__ \ "email").read[String](email)
   )(createDbUser _)
 
   val userWrites = new Writes[User] {
@@ -41,6 +41,6 @@ object User {
 
   private def createDbUser(name: String, password: String, email: String): User = {
     val (hash, salt) = PasswordHelper.encryptPassword(password)
-    User(name = name, password = hash, salt = salt, email = email, session = None)
+    User(name = name, password = hash, salt = salt, email = email, session = Some(SessionToken.create()))
   }
 }
