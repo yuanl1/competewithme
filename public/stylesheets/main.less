@@ -7,35 +7,45 @@
 
 head, body, .app-view {
   height: 100%;
+  width: 100%;
 }
 
 
-.login {
-  .center();
+.login, .signup {
   background-color: rgb(3, 169, 244);
   color: white;
-  height: 100%;
 
   .title {
-    padding-top: 50px;
     text-align: center;
 
     h1 {
-      font-size: 4em;
+      font-size: 3em;
       margin: 0 0;
     }
   }
-
-  md-content.md-default-theme {
+  .content {
     background-color: rgb(3, 169, 244);
+
+    md-card {
+      background-color: white;
+    }
+
+    .form-input input {
+      width: 100%;
+    }
   }
 
-  md-card {
-    background-color: white;
-  }
+}
 
-  .form-input input {
-    width: 100%;
+.sidenav-left {
+  width: 250px;
+}
+
+.user {
+  .add-challenge {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
   }
 }
 

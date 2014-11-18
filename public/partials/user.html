@@ -1,7 +1,17 @@
 <section class="user" layout="vertical" layout-fill>
-  <md-content>
-    <md-card>
-      This is the User Page
-    </md-card>
-  </md-content>
+  <md-toolbar class="md-default-theme">
+    <h2 class="md-toolbar-tools">
+        <a href="" ng-click="openLeftMenu()"><i class="fa fa-bars"></i></a><span>Compete With Me</span>
+    </h2>
+  </md-toolbar>
+  <div layout="row" flex>
+    <md-sidenav component-id="left" class="md-sidenav-left sidenav-left">
+
+    </md-sidenav>
+    <md-content flex>
+    </md-content>
+  </div>
+  <md-button class="md-fab md-primary md-button md-default-theme add-challenge"><i class="fa fa-plus"></i></md-button>
+
+
 </section>

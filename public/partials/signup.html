@@ -1,4 +1,4 @@
-<div class="login"  layout="vertical" layout-align="center" layout-fill>
+<div class="signup"  layout="vertical" layout-align="center" layout-fill>
   <div class="title">
     <h1>Compete</h1>
     <h1>With Me</h1>
@@ -6,10 +6,11 @@
   <md-content class="content">
     <md-card>
       <form layout="vertical" layout-align="center">
+        <md-text-float md-theme="light-green" label="Name" ng-model="name" class="form-input"> </md-text-float>
         <md-text-float md-theme="light-green" label="Email" ng-model="email" class="form-input" type="email"> </md-text-float>
         <md-text-float md-theme="light-green" label="Password" ng-model="password" class="form-input" type="password"> </md-text-float>
-        <md-button class="md-raised md-primary" ng-click="doLogin()">Login</md-button>
-        <md-button class=" md-primary" ng-click="doSignup()">Sign Up</md-button>
+        <md-button class="md-raised md-primary" ng-click="doSignup()">Sign Up</md-button>
+        <md-button class=" md-primary" ng-click="doLogin()">Log In</md-button>
       </form>
     </md-card>
   </md-content>
