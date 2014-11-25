@@ -6,7 +6,7 @@ import play.api.libs.json.{JsArray, Json}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import play.api.Logger
-import mongo.{UserManager, CheckinManager, ChallengeManager}
+import mongo.{UserManager, ChallengeManager}
 import models._
 import reactivemongo.core.commands.LastError
 import scala.Some
@@ -19,46 +19,20 @@ import util.ControllerHelpers
 object ChallengesController extends ControllerHelpers {
   implicit val userWrites = User.userWrites
 
-
-  def getChallenges() = Action.async {
-    ChallengeManager.getChallenges.map{ challenges =>
-      Ok(Json.toJson(challenges))
+  def getChallenge(id: UUID) = Authenticated { case (request, user) =>
+    ChallengeManager.getChallenge(id).map {
+      case Some(challenge) if challenge.hasMember(user) => Ok(Json.toJson(challenge))
+      case None => Unauthorized
     }
   }
 
-  def getChallenge(id: UUID) = Action.async {
-    ChallengeManager.getChallenge(id).map { challenge =>
-      Ok(Json.toJson(challenge))
-    }
-  }
-
-  def getChallengeAll(id: UUID) = Action.async {
-    for {
-      challengeOpt <- ChallengeManager.getChallenge(id)
-      checkins <- CheckinManager.getByChallenge(id)
-      users <- if (challengeOpt.isDefined) UserManager.getUsersInChallenge(challengeOpt.get) else Future(List.empty[User])
-    } yield {
-      challengeOpt match {
-        case Some(challenge) =>
-          Ok(Json.toJson(challenge))
-        case None => NotFound
-      }
-    }
-  }
-
-  def getChallengeCheckins(challengeId: UUID) = Action.async {
-    CheckinManager.getByChallenge(challengeId).map { checkins =>
-      Ok(Json.toJson(checkins))
-    }
-  }
-
-  def getChallengeMembers(id: UUID) = Action.async {
+  def getChallengeMembers(id: UUID) = Authenticated { case (request, user) =>
     ChallengeManager.getChallenge(id).flatMap{
-      case Some(challenge) =>
+      case Some(challenge) if challenge.hasMember(user) =>
         UserManager.getUsersInChallenge(challenge).map { users =>
           Ok(Json.toJson(users))
         }
-      case None => Future(NotFound)
+      case None => Future(Unauthorized)
     }
   }
 
@@ -95,7 +69,7 @@ object ChallengesController extends ControllerHelpers {
             if(error.ok) {
               Ok(Json.toJson(newChallengeOpt.get))
             } else {
-              BadRequest(Json.obj("error" -> error.message))
+              InternalServerError(Json.obj("error" -> error.message))
             }
           }
         } else {
@@ -105,14 +79,36 @@ object ChallengesController extends ControllerHelpers {
     }
   }
 
+  def createCheckin(id: UUID) = AuthenticatedJson { case (request, user) =>
+    request.body.asOpt[Checkin](Checkin.newCheckinReads) match {
+      case Some(checkin) =>
+        ChallengeManager.getChallenge(id).flatMap {
+          case Some(challenge) if challenge.canCheckin(user) =>
+            val newChallenge = challenge.checkin(user, checkin)
+            ChallengeManager.updateChallenge(newChallenge).map { error =>
+              if(error.ok) {
+                Ok(Json.toJson(newChallenge))
+              } else {
+                InternalServerError(Json.obj("error" -> error.message))
+              }
+            }
+          case Some(challenge) => Future(BadRequest(Json.obj("error" -> "Checkin requirements not met")))
+          case None => Future(BadRequest(Json.obj("error" -> "Challenge Not Found")))
+        }
+      case None => Future(BadRequest(Json.obj("error" -> "Must provide challenge message")))
+    }
+  }
+
+
   def createChallenge() = AuthenticatedJson { case (request, user) =>
     request.body.asOpt[Challenge](Challenge.newChallengeReads(user)) match {
       case Some(challenge) =>
-        ChallengeManager.createChallenge(challenge).map{ err =>
-          if (err.ok)
+        ChallengeManager.createChallenge(challenge).map{ error =>
+          if (error.ok) {
             Ok(Json.toJson(challenge))
-          else
-            BadRequest
+          } else {
+            InternalServerError(Json.obj("error" -> error.message))
+          }
         }
       case None =>
         Future(BadRequest)

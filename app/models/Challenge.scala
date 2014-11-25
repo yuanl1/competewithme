@@ -2,6 +2,7 @@ package models
 
 import java.util.{Date, UUID}
 import play.api.libs.json._
+import org.joda.time.{Weeks, Days, DateTime, Hours}
 
 // JSON library
 import play.api.libs.json.Reads._ // Custom validation helpers
@@ -13,7 +14,8 @@ case class ChallengeMember(
   id: UUID,
   name: String,
   joined: Boolean,
-  role: Role)
+  role: Role,
+  checkins: Seq[Checkin])
 
 object ChallengeMember {
   implicit val challengeMemberFormatter = Json.format[ChallengeMember]
@@ -37,22 +39,45 @@ case class Challenge(
     members.exists(_.id == user.id)
   }
 
+  def getChallengeMember(user: User): Option[ChallengeMember] = members.find(_.id == user.id)
+
   def inviteMember(user: User): Option[Challenge] = {
     if(hasMember(user)) {
       None
     } else {
-      Some(this.copy(members = members + ChallengeMember(user.id, user.name, false, Role.Member)))
+      Some(this.copy(members = members + ChallengeMember(user.id, user.name, false, Role.Member, List.empty[Checkin])))
     }
   }
 
   def joinChallenge(user: User): Option[Challenge] = {
     members.find(_.id == user.id).flatMap{ challengeMember =>
       if(!challengeMember.joined){
-        Some(this.copy(members = members - challengeMember + ChallengeMember(user.id, user.name, true, Role.Member)))
+        Some(this.copy(members = members - challengeMember + ChallengeMember(user.id, user.name, true, Role.Member, List.empty[Checkin])))
       } else {
         None
       }
     }
+  }
+
+  def canCheckin(user: User): Boolean = {
+    this.members.exists{ member =>
+      val now = new Date()
+      now.after(this.startDate) &&
+      now.before(this.endDate) &&
+      member.joined &&
+      this.rule.canCheckin(member.checkins)
+    }
+  }
+
+  def checkin(user: User, checkin: Checkin): Challenge = {
+    val members = this.members.map { member =>
+      if(member.id == user.id) {
+        member.copy(checkins = checkin +: member.checkins)
+      } else {
+        member
+      }
+    }
+    this.copy(members = members)
   }
 }
 
@@ -71,7 +96,7 @@ object Challenge {
       startDate,
       rule.getEndDate(startDate),
       reward,
-      Set(ChallengeMember(user.id, user.name, true, Role.Owner)),
+      Set(ChallengeMember(user.id, user.name, true, Role.Owner, Seq.empty[Checkin])),
       visibility,
       rule)
   }

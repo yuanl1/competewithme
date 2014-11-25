@@ -9,21 +9,13 @@ import play.api.libs.functional.syntax._ // Combinator syntax
  * Created by kevinli on 9/23/14.
  */
 case class Checkin(
-  user: UUID,
-  challenge: UUID,
   message: String,
-  date: Date){
-}
+  date: Date)
 
 object Checkin {
   implicit val checkinFormat = Json.format[Checkin]
-  def newCheckinReads(user: User): Reads[Checkin] = (
-      (JsPath \ "challenge").read[UUID] and
-      (JsPath \ "message").read[String]
-    )(createNewCheckin(user.id) _)
 
-
-  def createNewCheckin(userId: UUID)(challengeId: UUID, message: String): Checkin = {
-    Checkin(user=userId, challenge=challengeId, message=message, date= new Date)
+  def newCheckinReads: Reads[Checkin] = (JsPath \ "message").read[String].map{ message =>
+    Checkin(message, new Date)
   }
 }

@@ -1,7 +1,7 @@
 package controllers
 
 import play.api.mvc._
-import mongo.{CheckinManager, ChallengeManager, UserManager}
+import mongo.{ChallengeManager, UserManager}
 import java.util.UUID
 import models.{SessionToken, Checkin, User}
 import play.api.libs.json.{JsSuccess, JsArray, Json}
@@ -71,12 +71,6 @@ object UsersController extends ControllerHelpers{
   def getInvitesForUser = Authenticated { case (request, user) =>
     ChallengeManager.getChallengeInvitesForUser(user).map{ challenges =>
       Ok(Json.toJson(challenges))
-    }
-  }
-
-  def getCheckinsForUser = Authenticated { case (request, user) =>
-    CheckinManager.getByUser(user).map { checkins =>
-      Ok(Json.toJson(checkins))
     }
   }
 

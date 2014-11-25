@@ -11,22 +11,16 @@ POST    /api/users/login                                        controllers.User
 GET     /api/users/info                                         controllers.UsersController.getUser()
 GET     /api/users/challenges                                   controllers.UsersController.getChallengesForUser()
 GET     /api/users/invites                                      controllers.UsersController.getInvitesForUser()
-GET     /api/users/checkins                                     controllers.UsersController.getCheckinsForUser()
 
 
 # Challenge API
-GET     /api/challenges                                         controllers.ChallengesController.getChallenges()
 GET     /api/challenges/:id                                     controllers.ChallengesController.getChallenge(id: java.util.UUID)
-GET     /api/challenges/:id/all                                 controllers.ChallengesController.getChallengeAll(id: java.util.UUID)
-GET     /api/challenges/:id/checkins                            controllers.ChallengesController.getChallengeCheckins(id: java.util.UUID)
 GET     /api/challenges/:id/members                             controllers.ChallengesController.getChallengeMembers(id: java.util.UUID)
 GET     /api/challenges/:id/invite/:userId                      controllers.ChallengesController.inviteUserToChallenge(id: java.util.UUID, userId: java.util.UUID)
 GET     /api/challenges/:id/join                                controllers.ChallengesController.joinChallenge(id: java.util.UUID)
-
+POST    /api/challenges/:id/checkin                             controllers.ChallengesController.createCheckin(id: java.util.UUID)
 POST    /api/challenges                                         controllers.ChallengesController.createChallenge()
 
-# Checkin API
-POST    /api/checkins                                           controllers.CheckinsController.createCheckin()
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

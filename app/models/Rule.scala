@@ -40,7 +40,7 @@ sealed trait SprintLength{
 object SprintLength {
   case object Day extends SprintLength{ val unit = "Day"; val days = 1}
   case object Week extends SprintLength{ val unit = "Week"; val days = 7 }
-  case object TwoWeeks extends SprintLength{ val unit = "TwoWeeks"; val days = 14 }
+  case object Month extends SprintLength{ val unit = "Month"; val days = 30 }
 
   implicit val sprintLengthWrites: Writes[SprintLength] = new Writes[SprintLength] {
     def writes(length: SprintLength) = JsString(length.unit)
@@ -49,7 +49,7 @@ object SprintLength {
   implicit val sprintLengthReads: Reads[SprintLength] = JsPath.read[String].map{
     case "Day" => Day
     case "Week" => Week
-    case "TwoWeeks" => TwoWeeks
+    case "Month" => Month
     case _ => Day
   }
 }
@@ -60,7 +60,7 @@ case class Rule(
   numberOfSprints: Int,
   checkinFrequency: CheckinFrequency) {
 
-  def canCheckin(checkins: List[Checkin]): Boolean = {
+  def canCheckin(checkins: Seq[Checkin]): Boolean = {
     checkins.headOption match {
       case Some(latestCheckin) =>
         checkinFrequency match {
