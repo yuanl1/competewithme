@@ -1,11 +1,13 @@
 var competeWithMe = angular.module('CompeteWithMe', [
   'ngRoute',
-  'ngMaterial',
+  'ngCookies',
   'loginModule',
-  'userModule'
+  'userModule',
+  'challengeModule'
 ]);
 
 competeWithMe.config(['$routeProvider', function($routeProvider) {
+
   $routeProvider.
     when('/login', {
       templateUrl: '/assets/partials/login.html',
@@ -15,6 +17,10 @@ competeWithMe.config(['$routeProvider', function($routeProvider) {
       templateUrl: '/assets/partials/signup.html',
       controller: 'SignupCtrl'
     }).
+    when('/challenges', {
+      templateUrl: '/assets/partials/challenges.html',
+      controller: 'ChallengeCtrl'
+    }).
     when('/user', {
       templateUrl: '/assets/partials/user.html',
       controller: 'UserCtrl'
@@ -22,4 +28,11 @@ competeWithMe.config(['$routeProvider', function($routeProvider) {
     otherwise({
       redirectTo: '/login'
     });
+}]).
+run(['$cookies','$http', function($cookies, $http){
+  var session = $cookies.session;
+  if(session) {
+    $http.defaults.headers.common.Authorization = 'Bearer ' + session;
+  }
+
 }]);

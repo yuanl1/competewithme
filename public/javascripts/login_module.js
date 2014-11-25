@@ -1,4 +1,4 @@
-var loginModule = angular.module('loginModule', ['ngCookies']);
+var loginModule = angular.module('loginModule', ['ngCookies', 'ngMaterial']);
 loginModule.value('init', {'email' : ''});
 
 loginModule.controller('LoginCtrl', [
@@ -21,7 +21,8 @@ function($scope, $http, $cookies, $location, $mdToast, init) {
       $http.post('/api/users/login', data).
         success(function(data, status, headers, config) {
           $cookies.session = data.id;
-          $location.url('/user');
+          $http.defaults.headers.common.Authorization = 'Bearer ' + data.id;
+          $location.url('/challenges');
         }).error(function(data, status, headers, config) {
           $mdToast.show({
             template: '<md-toast>Incorrect Email or Password</md-toast>',
@@ -61,7 +62,7 @@ function($scope, $http, $cookies, $location, $mdToast, init){
     $http.post('/api/users/register', data).
       success(function(data, status, headers, config){
           $cookies.session = data.id;
-          $location.url('/user');
+          $location.url('/challenges');
       }).error(function(data, status, headers, config){
           if(status === 409) {
             init.email = $scope.email;
